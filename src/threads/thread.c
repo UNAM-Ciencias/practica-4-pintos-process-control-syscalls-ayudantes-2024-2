@@ -34,6 +34,10 @@ static struct thread *idle_thread;
 /* Initial thread, the thread running init.c:main(). */
 static struct thread *initial_thread;
 
+#ifdef USERPROG
+static struct process initial_thread_process;
+#endif
+
 /* Lock used by allocate_tid(). */
 static struct lock tid_lock;
 
@@ -98,6 +102,11 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+
+  #ifdef USERPROG
+  initial_thread->process_info = &initial_thread_process;
+  process_init (&initial_thread_process, initial_thread->tid);
+  #endif
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -463,6 +472,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+
+  /// AQUI estaba el codigo
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);

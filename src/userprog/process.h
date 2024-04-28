@@ -9,6 +9,7 @@ struct process
   {
     tid_t tid;
     // TODO: define other fields needed for a user process
+    int32_t exit_status;
   };
 
 void process_init (struct process* process, int tid);
