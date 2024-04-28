@@ -15,6 +15,7 @@
 #include "threads/init.h"
 #include "threads/interrupt.h"
 #include "threads/palloc.h"
+#include "threads/malloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "devices/timer.h"
@@ -24,8 +25,10 @@ static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 static size_t str_tokenize (char* str, char token);
 
-void process_init (struct process* process UNUSED, int tid UNUSED)
+void process_init (struct process* process, int tid)
 {
+  process->tid = tid;
+  process->exit_status = 0;
 }
 
 /* Starts a new thread running a user program loaded from
@@ -64,6 +67,11 @@ start_process (void *file_name_)
   struct thread* current = thread_current ();
   int tokens = str_tokenize (file_name, ' ');
   strlcpy (current->name, file_name, sizeof current->name);
+
+  struct process* process = malloc (sizeof (struct process));
+  process_init (process, current->tid);
+  current->process_info = process;
+
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -131,7 +139,7 @@ process_exit (void)
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
-  int current_thread_exit_status = 0;
+  int current_thread_exit_status = process_get_exit_status ();
   printf("%s: exit(%d)\n", cur->name, current_thread_exit_status);
 
   /* Destroy the current process's page directory and switch back
@@ -152,13 +160,16 @@ process_exit (void)
     }
 }
 
-void process_set_exit_status (int32_t exit_status UNUSED)
+void process_set_exit_status (int32_t exit_status)
 {
+  struct process* process = thread_current ()->process_info;
+  process->exit_status = exit_status;
 }
 
 int32_t process_get_exit_status (void)
 {
-  return 0;
+  struct process* process = thread_current ()->process_info;
+  return process->exit_status;
 }
 
 /* Sets up the CPU for running user code in the current

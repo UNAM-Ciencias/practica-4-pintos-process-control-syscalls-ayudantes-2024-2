@@ -4,6 +4,7 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "userprog/filesys-syscall.h"
+#include "userprog/process.h"
 #include "userprog/validate-user-memory.h"
 
 static void syscall_handler (struct intr_frame *);
@@ -64,6 +65,7 @@ exit_wrapper (int32_t *esp) {
 }
 
 static void 
-exit (int exit_status UNUSED) {
+exit (int exit_status) {
+  process_set_exit_status (exit_status);
   thread_exit ();
 }
